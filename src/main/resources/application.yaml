@@ -1,0 +1,7 @@
+server:
+  port: 9999
+logging:
+  level:
+    root: debug
+    web: debug
+    sql: debug
