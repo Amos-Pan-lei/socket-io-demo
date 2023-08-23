@@ -3,39 +3,60 @@ package com.pl.socketioserver.listener;
 import com.corundumstudio.socketio.AckRequest;
 import com.corundumstudio.socketio.SocketIOClient;
 import com.corundumstudio.socketio.SocketIONamespace;
+import com.corundumstudio.socketio.SocketIOServer;
 import com.corundumstudio.socketio.annotation.OnConnect;
 import com.corundumstudio.socketio.annotation.OnDisconnect;
 import com.corundumstudio.socketio.annotation.OnEvent;
+import com.pl.socketioserver.bean.ChatObj;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.util.Random;
+import java.net.InetSocketAddress;
 
 @Component
 @Slf4j
+@RequiredArgsConstructor
 public class EventAware {
 
-    @OnConnect
-    public void onConnect(SocketIOClient socketIOClient) {
-        log.info("客户端 {} 连接 ", socketIOClient.getSessionId());
-        SocketIONamespace namespace = socketIOClient.getNamespace();
+    private final SocketIOServer socketIOServer;
 
-        log.info("namespace = {}",namespace.getName());
-        socketIOClient.joinRoom("room001");
-        socketIOClient.leaveRoom("");
+    @OnConnect
+    public void onConnect(SocketIOClient client) {
+        InetSocketAddress remoteAddress = (InetSocketAddress) client.getRemoteAddress();
+        String hostAddress = remoteAddress.getAddress().getHostAddress();
+
+        log.info("ip {} 客户端 {} 连接 ", hostAddress, client.getSessionId());
+        SocketIONamespace namespace = client.getNamespace();
+        log.info("namespace = {}", namespace.getName());
+        client.joinRoom("room001");
     }
 
     @OnEvent("chatEvent")
-    public void onChatEvent(SocketIOClient client, AckRequest ackSender, Object data) {
-        log.info("客户端 {} 发送 chatEvent  , AckRequest {} , 数据 {}", client.getSessionId(), ackSender, data);
-        client.getNamespace().getBroadcastOperations().sendEvent("chatEvent", new Random().doubles().toString());
-        log.info("client {} 在 namespace {} 的 room = {}",client.getSessionId(),client.getNamespace().getName(),client.getAllRooms());
+    public void onChatEvent(SocketIOClient client, AckRequest ackSender, ChatObj data) {
+        InetSocketAddress remoteAddress = (InetSocketAddress) client.getRemoteAddress();
+        String hostAddress = remoteAddress.getAddress().getHostAddress();
+        log.info("ip {} 客户端 {} 发送 chatEvent  ,   数据 {}", hostAddress, client.getSessionId(), data);
+        data.setIp(hostAddress);
+        data.setUser(hostAddress);
+        socketIOServer.getRoomOperations("room001").sendEvent("chatEvent", data);
+        log.info("client {} 在 namespace {} 的 room = {}", client.getSessionId(), client.getNamespace().getName(), client.getAllRooms());
     }
 
     @OnDisconnect
-    public void onDisconnect(SocketIOClient socketIOClient) {
-        log.info("客户端 {} 断开连接 ", socketIOClient.getSessionId());
+    public void onDisconnect(SocketIOClient client) {
+        InetSocketAddress remoteAddress = (InetSocketAddress) client.getRemoteAddress();
+        String hostAddress = remoteAddress.getAddress().getHostAddress();
+        log.info("ip {} 客户端 {} 断开连接 ", hostAddress, client.getSessionId());
 
     }
 
+    @OnEvent("checkIp")
+    public void checkIp(SocketIOClient client, AckRequest ackSender, ChatObj data) {
+        InetSocketAddress remoteAddress = (InetSocketAddress) client.getRemoteAddress();
+        String hostAddress = remoteAddress.getAddress().getHostAddress();
+        log.info("checkIp  {} 客户端 {} 发送 chatEvent  ", hostAddress, client.getSessionId());
+        data.setIp(hostAddress);
+        client.sendEvent("checkIp", data);
+    }
 }

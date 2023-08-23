@@ -1,0 +1,9 @@
+logging:
+  level:
+    root: info
+    web: info
+    sql: info
+socket:
+  io:
+    hostname: ''
+    port: 9092
