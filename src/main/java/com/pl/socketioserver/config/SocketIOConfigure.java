@@ -1,16 +1,23 @@
 package com.pl.socketioserver.config;
 
+import cn.hutool.log.Log;
 import com.corundumstudio.socketio.SocketIOServer;
 import com.corundumstudio.socketio.annotation.SpringAnnotationScanner;
 import com.pl.socketioserver.auth.UserAuthHandler;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
+
 @EnableConfigurationProperties(SocketIOProperties.class)
 @Configuration
 @RequiredArgsConstructor
+@Slf4j
 public class SocketIOConfigure {
     private final SocketIOProperties properties;
     @Bean
@@ -36,8 +43,17 @@ public class SocketIOConfigure {
 
         config.setAuthorizationListener(new UserAuthHandler());
         final SocketIOServer server = new SocketIOServer(config);
-        server.start();
 
+
+        InetAddress localHost = null;
+        try {
+            localHost = InetAddress.getLocalHost();
+        } catch (UnknownHostException e) {
+            log.error("本机地址报错了",e);
+        }
+        log.info("本机 == {} ",localHost);
+
+        server.start();
         return server;
     }
 

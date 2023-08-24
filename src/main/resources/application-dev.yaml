@@ -5,5 +5,4 @@ logging:
     sql: info
 socket:
   io:
-    hostname: ''
-    port: 9092
+    hostname: '172.16.50.100'

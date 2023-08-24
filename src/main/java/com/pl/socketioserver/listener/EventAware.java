@@ -8,6 +8,7 @@ import com.corundumstudio.socketio.annotation.OnConnect;
 import com.corundumstudio.socketio.annotation.OnDisconnect;
 import com.corundumstudio.socketio.annotation.OnEvent;
 import com.pl.socketioserver.bean.ChatObj;
+import com.pl.socketioserver.service.SocketIOManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -20,15 +21,13 @@ import java.net.InetSocketAddress;
 public class EventAware {
 
     private final SocketIOServer socketIOServer;
+    private final SocketIOManager socketIOManager;
 
     @OnConnect
     public void onConnect(SocketIOClient client) {
         InetSocketAddress remoteAddress = (InetSocketAddress) client.getRemoteAddress();
         String hostAddress = remoteAddress.getAddress().getHostAddress();
-
         log.info("ip {} 客户端 {} 连接 ", hostAddress, client.getSessionId());
-        SocketIONamespace namespace = client.getNamespace();
-        log.info("namespace = {}", namespace.getName());
         client.joinRoom("room001");
     }
 
@@ -39,8 +38,9 @@ public class EventAware {
         log.info("ip {} 客户端 {} 发送 chatEvent  ,   数据 {}", hostAddress, client.getSessionId(), data);
         data.setIp(hostAddress);
         data.setUser(hostAddress);
-        socketIOServer.getRoomOperations("room001").sendEvent("chatEvent", data);
-        log.info("client {} 在 namespace {} 的 room = {}", client.getSessionId(), client.getNamespace().getName(), client.getAllRooms());
+        socketIOServer.getBroadcastOperations().sendEvent("chatEvent", data);
+        socketIOManager.noticeClients(data);
+        log.info("client {}  的 room = {}", hostAddress, client.getAllRooms());
     }
 
     @OnDisconnect
@@ -48,15 +48,16 @@ public class EventAware {
         InetSocketAddress remoteAddress = (InetSocketAddress) client.getRemoteAddress();
         String hostAddress = remoteAddress.getAddress().getHostAddress();
         log.info("ip {} 客户端 {} 断开连接 ", hostAddress, client.getSessionId());
-
     }
 
     @OnEvent("checkIp")
     public void checkIp(SocketIOClient client, AckRequest ackSender, ChatObj data) {
         InetSocketAddress remoteAddress = (InetSocketAddress) client.getRemoteAddress();
         String hostAddress = remoteAddress.getAddress().getHostAddress();
-        log.info("checkIp  {} 客户端 {} 发送 chatEvent  ", hostAddress, client.getSessionId());
+        log.info("checkIp  {} 客户端 {} 发送 checkIp  ", hostAddress, client.getSessionId());
         data.setIp(hostAddress);
         client.sendEvent("checkIp", data);
     }
+
+
 }

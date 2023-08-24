@@ -4,8 +4,7 @@ logging:
     web: debug
     sql: debug
 
+
 socket:
   io:
     hostname: '10.16.10.62'
-    port: 9092
-
