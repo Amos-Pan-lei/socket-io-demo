@@ -1,5 +1,6 @@
 package com.pl.socketioserver.listener;
 
+import cn.hutool.core.util.StrUtil;
 import com.corundumstudio.socketio.AckRequest;
 import com.corundumstudio.socketio.SocketIOClient;
 import com.corundumstudio.socketio.SocketIONamespace;
@@ -37,7 +38,7 @@ public class EventAware {
         String hostAddress = remoteAddress.getAddress().getHostAddress();
         log.info("ip {} 客户端 {} 发送 chatEvent  ,   数据 {}", hostAddress, client.getSessionId(), data);
         data.setIp(hostAddress);
-        data.setUser(hostAddress);
+        data.setUser(StrUtil.isEmpty(data.getUser())?hostAddress: data.getUser());
         socketIOServer.getBroadcastOperations().sendEvent("chatEvent", data);
         socketIOManager.noticeClients(data);
         log.info("client {}  的 room = {}", hostAddress, client.getAllRooms());
